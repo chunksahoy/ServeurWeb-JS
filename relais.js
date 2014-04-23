@@ -35,31 +35,18 @@ function start() {
 		 console.log("Service non supporté!");
 	  }
       else if (request.method === 'POST') {
-		
-         var req = http.request({
-               method   : 'POST',
-               hostname : 'javascript-minifier.com',
-               path     : '/raw',
-            },
-            function(resp) {
-               var msgRecu = "";
-               resp.on('data', function (moton) {
-                  msgRecu += moton;
-               });
-               resp.on('end', function () {
-                  response.writeHead(200, {
-                     "Content-Type": "text/plain",
-                     "Access-Control-Allow-Origin": "*",
-                     "Access-Control-Allow-Headers": "X-Requested-With"
-                  });
-                  response.write(toBase64(unescape(encodeURIComponent(msgRecu))));
-                  response.end();
-               });
-               if ( resp.statusCode !== 200 ) {
-                  return;
-               }
-            }
-         );
+		var req;
+		switch(pathname) {
+		case '/minify':
+			req = Options.getInstance().traiterOptions(0, response);
+			break;
+		case '/jshint': 
+			req= Options.getInstance().traiterOptions(1, response);
+			break;
+		default: 
+			console.log("Erreur: Service non supporté!");
+			break;
+		}
          req.on('error', function(err) {
             throw err;
          });
@@ -67,7 +54,6 @@ function start() {
          req.setHeader('Content-Length', zeQuery.length);
          req.end(zeQuery, 'utf8');
       }
-	  // ...
       else if (request.method == 'GET') {
          console.log("get...");
       }
@@ -84,12 +70,12 @@ var Options = (function () {
       var instance;
       function ZeOptions() {
           var options = new Array();
-			options[0] = traiterBackspace; // on suppose qu'une fonction de ce nom a été définie plus haut
-			options[1] = traiterReturn;   // idem
+			options[0] = requeteMini; // on suppose qu'une fonction de ce nom a été définie plus haut
+			options[1] = requeteHint;   // idem
 			
-			function traiterOptions(nb) {
+			this.traiterOptions = function (nb, response) {
    				if(options[nb] != null) {
-      				options[nb]();
+      				return options[nb](response);
   				}
 			}
       }			
@@ -107,7 +93,7 @@ var Options = (function () {
       };
   })();
   
-  function requeteMini() {
+  function requeteMini(response) {
 	return http.request({
                method   : 'POST',
                hostname : 'javascript-minifier.com',
@@ -133,7 +119,7 @@ var Options = (function () {
             }
          );
   }
-  function requeteHint() {
+  function requeteHint(response) {
 	return http.request({
                method   : 'POST',
                hostname : 'javascript-minifier.com',
